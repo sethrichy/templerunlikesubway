@@ -164,27 +164,44 @@
     .lesson {
       position: absolute;
       z-index: 2;
-      top: 105px;
-      left: clamp(14px, 2.3vw, 30px);
-      width: min(310px, calc(100% - 28px));
-      padding: 13px 15px 14px;
-      border-left: 2px solid var(--mint);
-      background: linear-gradient(90deg, rgba(248, 250, 244, .94), rgba(248, 250, 244, .55));
+      top: 94px;
+      left: 50%;
+      width: min(560px, calc(100% - 32px));
+      padding: 14px 20px 12px;
+      text-align: center;
+      transform: translateX(-50%);
       pointer-events: none;
     }
 
-    .lesson-heading { gap: 9px; margin-bottom: 5px; }
+    .lesson-kicker { margin: 0 0 5px; color: var(--mint); font: 9px/1.3 var(--mono); }
+    .lesson-heading { justify-content: center; gap: 9px; margin-bottom: 5px; }
     .lesson-index { color: var(--lime); font: 10px var(--mono); }
-    .lesson h2 { margin: 0; font-size: 17px; line-height: 1.15; font-weight: 600; }
-    .lesson p { max-width: 275px; margin: 0; color: #405d53; font-size: 12px; line-height: 1.48; }
+    .lesson h2 { margin: 0; font-size: 20px; line-height: 1.15; font-weight: 600; }
+    .lesson-copy {
+      min-height: 1em;
+      margin: 8px auto 2px;
+      color: var(--sky);
+      font: 700 52px/.98 var(--display);
+      text-transform: uppercase;
+    }
+    .lesson-copy.word-beat { animation: word-pop .34s cubic-bezier(.2, .85, .25, 1.2) both; }
+    .word-count { color: var(--muted); font: 9px var(--mono); }
+    .beat-track { width: min(240px, 60%); height: 3px; margin: 8px auto 0; overflow: hidden; background: rgba(25, 53, 50, .12); }
+    .beat-fill { display: block; width: 100%; height: 100%; background: var(--mint); transform: scaleX(0); transform-origin: left; }
+    .beat-fill.beat { animation: beat-sweep .5s linear both; }
+    @keyframes word-pop {
+      0% { opacity: 0; filter: blur(7px); transform: translateY(12px) scale(.78); }
+      65% { opacity: 1; filter: blur(0); transform: translateY(-2px) scale(1.06); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes beat-sweep { to { transform: scaleX(1); } }
 
     .readouts {
-      position: absolute;
-      z-index: 2;
-      top: 107px;
-      right: clamp(14px, 2.3vw, 30px);
-      gap: 18px;
-      text-align: right;
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      margin-top: 10px;
+      text-align: center;
       pointer-events: none;
     }
 
@@ -301,10 +318,11 @@
       .game-top { padding-top: 13px; }
       .route-label { font-size: 9px; }
       .route-stop { font-size: 8px; }
-      .lesson { top: 84px; padding: 10px 12px; }
-      .lesson h2 { font-size: 15px; }
-      .lesson p { font-size: 11px; }
-      .readouts { top: 89px; gap: 10px; }
+      .lesson { top: 78px; width: calc(100% - 20px); padding: 10px 12px; }
+      .lesson-kicker { font-size: 8px; }
+      .lesson h2 { font-size: 16px; }
+      .lesson-copy { font-size: 38px; }
+      .readouts { gap: 16px; margin-top: 8px; }
       .stat-label { font-size: 8px; }
       .stat-value { font-size: 13px; }
       .bottom-bar { min-height: 70px; padding: 9px 12px; }
@@ -350,7 +368,7 @@
     </header>
 
     <main class="game-frame" id="game-frame">
-      <canvas id="game-canvas" aria-label="Three-lane payment lab. Move the blue learner spark along the amber payment route."></canvas>
+      <canvas id="game-canvas" aria-label="Three-lane payment lab. Move the blue learner spark along the green payment route."></canvas>
 
       <div class="game-top" aria-label="Payment route progress">
         <div class="route-label"><span>PAYMENT ROUTE</span><span id="route-counter">STOP 01 / 06</span></div>
@@ -358,16 +376,18 @@
       </div>
 
       <section class="lesson" aria-live="polite" aria-atomic="true">
+        <p class="lesson-kicker">WHERE THE PAYMENT GOES</p>
         <div class="lesson-heading"><span class="lesson-index" id="lesson-index">01</span><h2 id="lesson-title">Start on a phone</h2></div>
-        <p id="lesson-copy">A person chooses who to pay and how much to send.</p>
+        <p class="lesson-copy" id="lesson-copy" aria-live="off">OPEN</p>
+        <span class="word-count" id="word-count">01 / 10</span>
+        <div class="beat-track" aria-hidden="true"><span class="beat-fill" id="beat-fill"></span></div>
+        <div class="readouts" aria-label="Run score">
+          <div><span class="stat-label">SIGNALS</span><span class="stat-value"><b id="score">00</b></span></div>
+          <div><span class="stat-label">CHARGE</span><span class="stat-value"><b id="charge">● ● ●</b></span></div>
+        </div>
       </section>
 
-      <div class="readouts" aria-label="Run score">
-        <div><span class="stat-label">SIGNALS</span><span class="stat-value"><b id="score">00</b></span></div>
-        <div><span class="stat-label">CHARGE</span><span class="stat-value"><b id="charge">● ● ●</b></span></div>
-      </div>
-
-      <p class="transfer-note"><strong>Blue:</strong> you <span aria-hidden="true">·</span> <strong>Amber:</strong> payment route</p>
+      <p class="transfer-note"><strong>Blue:</strong> you <span aria-hidden="true">·</span> <strong>Green:</strong> payment route</p>
 
       <div class="bottom-bar">
         <div class="distance-readout">
@@ -392,7 +412,7 @@
         <section class="overlay-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title" aria-describedby="overlay-copy">
           <p class="eyebrow" id="overlay-eyebrow">A LITTLE MONEY, A BIG JOURNEY</p>
           <h1 id="overlay-title">Follow the light.</h1>
-          <p class="overlay-copy" id="overlay-copy">You're the blue learner spark. Follow the amber payment route from a phone through wallets, banks, and a payment network. The route teaches the handoffs; banks settle funds separately.</p>
+          <p class="overlay-copy" id="overlay-copy">You're the blue learner spark. Follow the green payment route from a phone through wallets, banks, and a payment network. The route teaches the handoffs; banks settle funds separately.</p>
           <div class="overlay-facts" id="overlay-facts"><span class="fact">6 stops</span><span class="fact">3 wires</span><span class="fact">Watch for fake links</span></div>
           <div class="overlay-actions">
             <button class="primary-button" id="primary-action" type="button">START RUN <span aria-hidden="true">→</span></button>
@@ -408,13 +428,15 @@
       const COURSE_LENGTH = 2400;
       const START_SPEED = 40;
       const TOP_SPEED = 60;
+      const WORD_BEAT_SECONDS = .5;
+      const ENERGY_LANES = [-1, 0, 1, 0];
       const ROUTE_STOPS = [
-        { short: "Phone", lane: -1, title: "Start on a phone", copy: "A person chooses who to pay and how much to send." },
-        { short: "Wallet", lane: 0, title: "Wallet checks details", copy: "A wallet or payment app securely sends the payment instruction." },
-        { short: "Your bank", lane: 1, title: "Your bank checks", copy: "The sender's bank checks permission, account details, and available funds." },
-        { short: "Network", lane: 0, title: "Payment network routes", copy: "A network passes the instruction between financial institutions; it does not hold everyone's money." },
-        { short: "Their bank", lane: -1, title: "Their bank receives it", copy: "The recipient's bank checks the request and updates the right account." },
-        { short: "Their phone", lane: 0, title: "It reaches their phone", copy: "The recipient sees the new balance. Banks may settle with each other separately." }
+        { short: "Phone", title: "Start on a phone", copy: "A person chooses who to pay and how much to send.", words: ["OPEN", "THE", "APP", "CHOOSE", "A", "PERSON", "ENTER", "AN", "AMOUNT", "TAP", "SEND"] },
+        { short: "Wallet", title: "Wallet checks details", copy: "A wallet securely sends the payment instruction.", words: ["YOUR", "WALLET", "CHECKS", "DETAILS", "THEN", "SECURELY", "SENDS", "THE", "INSTRUCTION"] },
+        { short: "Your bank", title: "Your bank checks", copy: "The sender's bank checks permission, account details, and available funds.", words: ["YOUR", "BANK", "CHECKS", "PERMISSION", "ACCOUNT", "DETAILS", "AND", "AVAILABLE", "FUNDS"] },
+        { short: "Network", title: "Payment network routes", copy: "The network routes the instruction; it does not hold your money.", words: ["PAYMENT", "NETWORK", "ROUTES", "INSTRUCTION", "BANK", "TO", "BANK", "IT", "DOESN'T", "HOLD", "YOUR", "MONEY"] },
+        { short: "Their bank", title: "Their bank receives it", copy: "The recipient's bank checks the request and updates the right account.", words: ["THEIR", "BANK", "CHECKS", "THE", "REQUEST", "THEN", "UPDATES", "THE", "RIGHT", "ACCOUNT"] },
+        { short: "Their phone", title: "It reaches their phone", copy: "The recipient sees the new balance; banks may settle separately.", words: ["RECIPIENT", "SEES", "A", "NEW", "BALANCE", "BANKS", "SETTLE", "FUNDS", "SEPARATELY"] }
       ];
       const RISKS = ["FAKE LINK", "WRONG ACCT", "IMPERSONATOR", "CHECK DETAILS"];
       const canvas = document.querySelector("#game-canvas");
@@ -429,6 +451,8 @@
       const lessonIndex = document.querySelector("#lesson-index");
       const lessonTitle = document.querySelector("#lesson-title");
       const lessonCopy = document.querySelector("#lesson-copy");
+      const wordCount = document.querySelector("#word-count");
+      const beatFill = document.querySelector("#beat-fill");
       const scoreElement = document.querySelector("#score");
       const chargeElement = document.querySelector("#charge");
       const distanceElement = document.querySelector("#distance");
@@ -447,6 +471,11 @@
       let currentSpeed = START_SPEED;
       let cameraShake = 0;
       let hitFlash = 0;
+      let runTime = 0;
+      let stopStartTime = 0;
+      let currentWordKey = "";
+      let energyWordIndex = -1;
+      let energyWordStart = 0;
       let lastTime = 0;
       let previousStop = -1;
       const particles = [];
@@ -477,6 +506,11 @@
         currentSpeed = START_SPEED;
         cameraShake = 0;
         hitFlash = 0;
+        runTime = 0;
+        stopStartTime = 0;
+        currentWordKey = "";
+        energyWordIndex = -1;
+        energyWordStart = 0;
         particles.length = 0;
         previousStop = -1;
         player.lane = 0;
@@ -506,7 +540,23 @@
         routeCounter.textContent = `STOP ${String(currentStop + 1).padStart(2, "0")} / 06`;
         lessonIndex.textContent = String(currentStop + 1).padStart(2, "0");
         lessonTitle.textContent = stop.title;
-        lessonCopy.textContent = stop.copy;
+        if (currentStop !== previousStop) stopStartTime = runTime;
+        const wordIndex = Math.floor((runTime - stopStartTime) / WORD_BEAT_SECONDS) % stop.words.length;
+        const wordKey = `${currentStop}:${wordIndex}`;
+        if (currentWordKey !== wordKey) {
+          const word = stop.words[wordIndex];
+          currentWordKey = wordKey;
+          energyWordIndex += 1;
+          energyWordStart = runTime;
+          lessonCopy.textContent = word;
+          lessonCopy.setAttribute("aria-label", `${stop.title}. ${stop.copy} Word: ${word}.`);
+          wordCount.textContent = `${String(wordIndex + 1).padStart(2, "0")} / ${String(stop.words.length).padStart(2, "0")}`;
+          lessonCopy.classList.remove("word-beat");
+          beatFill.classList.remove("beat");
+          void beatFill.offsetWidth;
+          lessonCopy.classList.add("word-beat");
+          beatFill.classList.add("beat");
+        }
         scoreElement.textContent = String(score).padStart(2, "0");
         chargeElement.textContent = `${"● ".repeat(charge)}${"○ ".repeat(3 - charge)}`.trim();
         distanceElement.textContent = String(Math.floor(world)).padStart(3, "0");
@@ -541,7 +591,7 @@
         if (mode === "intro") {
           eyebrow.textContent = "A LITTLE MONEY, A BIG JOURNEY";
           title.textContent = "Follow the light.";
-          copy.textContent = "You're the blue learner spark. Follow the amber payment route from a phone through wallets, banks, and a payment network. The route teaches the handoffs; banks settle funds separately.";
+          copy.textContent = "You're the blue learner spark. Follow the green payment route from a phone through wallets, banks, and a payment network. The route teaches the handoffs; banks settle funds separately.";
           facts.innerHTML = '<span class="fact">6 stops</span><span class="fact">3 wires</span><span class="fact">Watch for fake links</span>';
           primaryAction.textContent = "START RUN →";
           secondaryAction.hidden = true;
@@ -588,6 +638,7 @@
       function update(delta) {
         if (status !== "running") return;
         currentSpeed = START_SPEED + (TOP_SPEED - START_SPEED) * Math.min(1, world / COURSE_LENGTH);
+        runTime += delta;
         world += delta * currentSpeed;
         cameraShake = Math.max(0, cameraShake - delta * 2.8);
         hitFlash = Math.max(0, hitFlash - delta * 1.5);
@@ -664,15 +715,15 @@
       }
 
       function routeLaneAt(distance) {
-        const segmentLength = COURSE_LENGTH / ROUTE_STOPS.length;
-        const boundedDistance = Math.max(0, Math.min(COURSE_LENGTH, distance));
-        const stopIndex = Math.min(ROUTE_STOPS.length - 1, Math.floor(boundedDistance / segmentLength));
-        const nextIndex = Math.min(ROUTE_STOPS.length - 1, stopIndex + 1);
-        if (stopIndex === nextIndex) return ROUTE_STOPS[stopIndex].lane;
-        const progress = (boundedDistance - stopIndex * segmentLength) / segmentLength;
+        const timeAhead = Math.max(0, (distance - world) / Math.max(currentSpeed, 1));
+        const beatProgress = Math.max(0, (runTime + timeAhead - energyWordStart) / WORD_BEAT_SECONDS);
+        const completedBeats = Math.floor(beatProgress);
+        const sequenceIndex = Math.max(0, energyWordIndex + completedBeats);
+        const progress = beatProgress - completedBeats;
         const eased = progress * progress * (3 - 2 * progress);
-        const startLane = ROUTE_STOPS[stopIndex].lane;
-        return startLane + (ROUTE_STOPS[nextIndex].lane - startLane) * eased;
+        const startLane = ENERGY_LANES[sequenceIndex % ENERGY_LANES.length];
+        const nextLane = ENERGY_LANES[(sequenceIndex + 1) % ENERGY_LANES.length];
+        return startLane + (nextLane - startLane) * eased;
       }
 
       function depthY(depth) {
@@ -783,7 +834,7 @@
             const y = depthY(depth);
             context.beginPath();
             context.arc(x, y, 1.4 + depth * 2.2, 0, Math.PI * 2);
-            context.fillStyle = lane === 0 ? "#e39a37" : "#348c75";
+            context.fillStyle = lane === 0 ? "#76c980" : "#348c75";
             context.shadowColor = context.fillStyle;
             context.shadowBlur = 8;
             context.fill();
@@ -793,7 +844,8 @@
       }
 
       function drawPaymentPath(time) {
-        const lookAhead = 125;
+        const targetDepth = .65;
+        const lookAhead = currentSpeed * WORD_BEAT_SECONDS / (1 - targetDepth);
         context.save();
         context.beginPath();
         for (let index = 0; index <= 48; index += 1) {
@@ -806,12 +858,12 @@
         }
         context.lineCap = "round";
         context.lineJoin = "round";
-        context.strokeStyle = "rgba(226, 132, 47, .54)";
+        context.strokeStyle = "rgba(50, 156, 76, .56)";
         context.lineWidth = 9;
-        context.shadowColor = "rgba(226, 132, 47, .7)";
+        context.shadowColor = "rgba(50, 156, 76, .72)";
         context.shadowBlur = 13;
         context.stroke();
-        context.strokeStyle = "#e58a31";
+        context.strokeStyle = "#329c4c";
         context.lineWidth = 3;
         context.shadowBlur = 0;
         context.stroke();
@@ -823,7 +875,7 @@
           context.beginPath();
           context.arc(x, y, 2 + depth * 2, 0, Math.PI * 2);
           context.fillStyle = "#fff4d3";
-          context.shadowColor = "#e58a31";
+          context.shadowColor = "#329c4c";
           context.shadowBlur = 8;
           context.fill();
         }
@@ -876,23 +928,61 @@
 
       function drawOrb(x, y, radius, color, glowColor, time, isPlayer) {
         const pulse = 1 + Math.sin(time / 190 + (isPlayer ? 0 : 1.4)) * .055;
+        const phase = time * .004 + (isPlayer ? 0 : 1.7);
         context.save();
         context.translate(x, y);
         context.scale(pulse, pulse);
+
+        function energyShape(scale, phaseOffset) {
+          context.beginPath();
+          for (let pointIndex = 0; pointIndex <= 48; pointIndex += 1) {
+            const angle = pointIndex / 48 * Math.PI * 2;
+            const ripple = 1
+              + Math.sin(angle * 3 + phase + phaseOffset) * .085
+              + Math.sin(angle * 7 - phase * 1.4 + phaseOffset) * .045
+              + Math.cos(angle * 11 + phase * .7) * .025;
+            const wobble = Math.sin(time * .012 + pointIndex * .8 + phaseOffset) * .025;
+            const edge = radius * scale * (ripple + wobble);
+            const pointX = Math.cos(angle) * edge * (1 + Math.sin(phase) * .035);
+            const pointY = Math.sin(angle) * edge * (1 + Math.cos(phase) * .055);
+            if (pointIndex === 0) context.moveTo(pointX, pointY);
+            else context.lineTo(pointX, pointY);
+          }
+          context.closePath();
+        }
+
+        context.globalAlpha = .28;
+        context.fillStyle = isPlayer ? "#39bad6" : "#a3edaf";
+        energyShape(1.25, .8);
+        context.fill();
+        context.globalAlpha = .24;
+        context.fillStyle = isPlayer ? "#df9a37" : "#329c4c";
+        energyShape(1.12, -1.1);
+        context.fill();
+        context.globalAlpha = 1;
         context.shadowColor = glowColor;
-        context.shadowBlur = radius * 2.2;
-        const gradient = context.createRadialGradient(-radius * .35, -radius * .4, 1, 0, 0, radius);
+        context.shadowBlur = radius * 2.8;
+        const gradient = context.createRadialGradient(-radius * .25, -radius * .32, 1, 0, 0, radius * 1.1);
         gradient.addColorStop(0, "#ffffff");
-        gradient.addColorStop(.24, color);
-        gradient.addColorStop(1, glowColor);
+        gradient.addColorStop(.23, color);
+        gradient.addColorStop(.72, glowColor);
+        gradient.addColorStop(1, "rgba(255, 255, 255, .14)");
         context.fillStyle = gradient;
-        context.beginPath();
-        context.arc(0, 0, radius, 0, Math.PI * 2);
+        energyShape(1, 0);
         context.fill();
         context.shadowBlur = 0;
-        context.strokeStyle = "rgba(255, 255, 255, .74)";
-        context.lineWidth = Math.max(1, radius * .08);
+        context.strokeStyle = isPlayer ? "rgba(227, 250, 255, .9)" : "rgba(255, 246, 219, .9)";
+        context.lineWidth = Math.max(1, radius * .07);
         context.stroke();
+        context.globalAlpha = .9;
+        context.fillStyle = isPlayer ? "#d9fbff" : "#e4ffe6";
+        for (let moteIndex = 0; moteIndex < 3; moteIndex += 1) {
+          const moteAngle = phase * (moteIndex % 2 ? -1 : 1) + moteIndex * Math.PI * 2 / 3;
+          const moteDistance = radius * (1.13 + Math.sin(phase * 2 + moteIndex) * .08);
+          context.beginPath();
+          context.arc(Math.cos(moteAngle) * moteDistance, Math.sin(moteAngle) * moteDistance, Math.max(1, radius * .085), 0, Math.PI * 2);
+          context.fill();
+        }
         context.restore();
       }
 
@@ -936,13 +1026,13 @@
         }
 
         const targetDepth = .65;
-        const targetDistance = Math.min(COURSE_LENGTH, world + 125 * (1 - targetDepth));
+        const targetDistance = Math.min(COURSE_LENGTH, world + currentSpeed * WORD_BEAT_SECONDS);
         const receiverX = laneX(routeLaneAt(targetDistance), targetDepth);
         const receiverY = depthY(targetDepth);
         const playerX = laneX(player.drawLane, .92);
         const playerY = height * .805 - player.jump * height * .055;
         drawParticles();
-        drawOrb(receiverX, receiverY + Math.sin(time / 380) * 3, Math.max(10, Math.min(21, width * .02)), "#ffd27a", "#e58a31", time, false);
+        drawOrb(receiverX, receiverY + Math.sin(time / 380) * 3, Math.max(10, Math.min(21, width * .02)), "#a3edaf", "#329c4c", time, false);
         drawOrb(playerX, playerY, Math.max(13, Math.min(26, width * .025)), "#71d9f4", "#1684a4", time, true);
         if (hitFlash > 0) {
           context.fillStyle = `rgba(255, 91, 76, ${hitFlash * .14})`;
