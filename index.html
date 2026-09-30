@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10201d">
+  <title>Current Run — Follow the payment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --night: #edf2e9;
+      --deep: #f8faf4;
+      --mint: #12796e;
+      --lime: #df9a37;
+      --coral: #d75d3c;
+      --sky: #1684a4;
+      --paper: #193532;
+      --muted: #597068;
+      --mono: "DM Mono", monospace;
+      --display: "Space Grotesk", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 50% 77%, rgba(87, 157, 123, .16), transparent 44%),
+        radial-gradient(ellipse at 8% 8%, rgba(242, 173, 81, .14), transparent 32%),
+        var(--night);
+      color: var(--paper);
+      font-family: var(--display);
+    }
+
+    button { color: inherit; font: inherit; }
+
+    .shell {
+      width: min(1440px, 100%);
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: 20px clamp(14px, 3vw, 40px) 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .topbar, .brand, .top-actions, .lesson-heading, .readouts, .bottom-bar,
+    .controls, .key-hint, .overlay-actions, .overlay-facts {
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar { min-height: 42px; justify-content: space-between; gap: 20px; }
+    .brand { gap: 11px; min-width: 0; }
+
+    .brand-mark {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(18, 121, 110, .55);
+      border-radius: 50%;
+      box-shadow: 0 0 18px rgba(18, 121, 110, .14), inset 0 0 10px rgba(18, 121, 110, .1);
+    }
+
+    .brand-mark::before, .brand-mark::after {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      content: "";
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .brand-mark::before { width: 11px; height: 11px; background: var(--mint); box-shadow: 0 0 15px rgba(18, 121, 110, .55); }
+    .brand-mark::after { width: 3px; height: 3px; background: white; }
+
+    .brand-name { margin: 0; font-size: 15px; line-height: 1; font-weight: 700; }
+    .brand-tag { margin: 4px 0 0; color: var(--muted); font: 10px/1 var(--mono); }
+    .top-actions { gap: 12px; }
+
+    .run-label, .eyebrow, .stat-label, .route-label, .hint-label {
+      color: var(--muted);
+      font: 10px/1.3 var(--mono);
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .run-label { padding: 7px 9px; border: 1px solid rgba(25, 72, 62, .18); border-radius: 2px; }
+
+    .icon-button, .control-button {
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid rgba(25, 72, 62, .24);
+      background: rgba(250, 252, 246, .92);
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, transform .18s ease;
+    }
+
+    .icon-button { width: 38px; height: 38px; border-radius: 2px; }
+    .icon-button svg { width: 16px; height: 16px; }
+    .icon-button:hover, .control-button:hover { border-color: var(--mint); background: rgba(18, 121, 110, .1); }
+    .icon-button:active, .control-button:active { transform: translateY(1px); }
+    button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+
+    .game-frame {
+      position: relative;
+      isolation: isolate;
+      flex: 1 1 auto;
+      min-height: 530px;
+      overflow: hidden;
+      border: 1px solid rgba(54, 105, 81, .28);
+      background: linear-gradient(180deg, #e4eee4 0%, #edf0df 51%, #cbded2 100%);
+      box-shadow: 0 22px 60px rgba(43, 70, 53, .14);
+    }
+
+    .game-frame::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(43, 87, 68, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(43, 87, 68, .045) 1px, transparent 1px),
+        radial-gradient(rgba(43, 87, 68, .13) .65px, transparent .65px);
+      background-size: 44px 44px, 44px 44px, 19px 19px;
+      content: "";
+      opacity: .32;
+      pointer-events: none;
+    }
+
+    #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .game-top {
+      position: absolute;
+      z-index: 2;
+      inset: 0 0 auto;
+      padding: 18px clamp(14px, 2.3vw, 30px) 0;
+      pointer-events: none;
+    }
+
+    .route-label { display: flex; justify-content: space-between; margin-bottom: 9px; }
+    .route-label span:last-child { color: var(--mint); }
+
+    .route-stops { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+
+    .route-stop {
+      min-width: 0;
+      padding-top: 8px;
+      border-top: 2px solid rgba(209, 228, 207, .2);
+      color: rgba(25, 53, 50, .55);
+      font: 9px/1.25 var(--mono);
+      transition: border-color .25s ease, color .25s ease;
+    }
+
+    .route-stop.active { border-color: var(--lime); color: var(--paper); }
+    .route-stop.passed { border-color: var(--mint); color: var(--mint); }
+
+    .lesson {
+      position: absolute;
+      z-index: 2;
+      top: 105px;
+      left: clamp(14px, 2.3vw, 30px);
+      width: min(310px, calc(100% - 28px));
+      padding: 13px 15px 14px;
+      border-left: 2px solid var(--mint);
+      background: linear-gradient(90deg, rgba(248, 250, 244, .94), rgba(248, 250, 244, .55));
+      pointer-events: none;
+    }
+
+    .lesson-heading { gap: 9px; margin-bottom: 5px; }
+    .lesson-index { color: var(--lime); font: 10px var(--mono); }
+    .lesson h2 { margin: 0; font-size: 17px; line-height: 1.15; font-weight: 600; }
+    .lesson p { max-width: 275px; margin: 0; color: #405d53; font-size: 12px; line-height: 1.48; }
+
+    .readouts {
+      position: absolute;
+      z-index: 2;
+      top: 107px;
+      right: clamp(14px, 2.3vw, 30px);
+      gap: 18px;
+      text-align: right;
+      pointer-events: none;
+    }
+
+    .stat-label { display: block; margin-bottom: 4px; }
+    .stat-value { font: 16px/1 var(--mono); color: var(--paper); }
+    .stat-value b { color: var(--lime); font-weight: 500; }
+
+    .bottom-bar {
+      position: absolute;
+      z-index: 2;
+      inset: auto 0 0;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 76px;
+      padding: 12px clamp(14px, 2.3vw, 30px);
+      border-top: 1px solid rgba(40, 76, 60, .17);
+      background: linear-gradient(0deg, rgba(249, 251, 245, .96), rgba(237, 244, 234, .86));
+    }
+
+    .distance-readout { min-width: 116px; }
+    .distance { font: 18px/1.1 var(--mono); }
+    .distance small { color: var(--muted); font-size: 10px; }
+    .signal-count { display: flex; justify-content: space-between; gap: 6px; margin-top: 3px; color: var(--mint); font: 10px var(--mono); }
+    .pace-readout { color: var(--lime); white-space: nowrap; }
+    .controls { gap: 7px; }
+
+    .control-button {
+      width: 42px;
+      height: 42px;
+      border-radius: 2px;
+      color: var(--paper);
+      touch-action: manipulation;
+    }
+
+    .control-button svg { width: 17px; height: 17px; }
+    .control-button.jump { width: 76px; gap: 5px; grid-auto-flow: column; color: var(--lime); }
+    .control-button.jump span { font: 9px var(--mono); }
+
+    .key-hint { justify-content: flex-end; gap: 6px; color: var(--muted); font: 10px var(--mono); text-align: right; }
+    .key { display: inline-grid; min-width: 21px; height: 21px; padding: 0 4px; place-items: center; border: 1px solid rgba(199, 228, 199, .24); border-radius: 2px; color: var(--paper); }
+    .key.jump-key { min-width: 42px; }
+
+    .transfer-note {
+      position: absolute;
+      z-index: 1;
+      bottom: 92px;
+      left: 50%;
+      width: max-content;
+      max-width: calc(100% - 24px);
+      padding: 6px 9px;
+      border: 1px solid rgba(40, 76, 60, .18);
+      background: rgba(249, 251, 245, .88);
+      color: #294a40;
+      font: 10px/1.3 var(--mono);
+      text-align: center;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .transfer-note strong { color: var(--mint); font-weight: 500; }
+
+    .overlay {
+      position: absolute;
+      z-index: 4;
+      inset: 0;
+      display: grid;
+      padding: 24px;
+      place-items: center;
+      background: rgba(233, 240, 231, .58);
+      backdrop-filter: blur(5px);
+    }
+
+    .overlay[hidden] { display: none; }
+
+    .overlay-card {
+      width: min(480px, 100%);
+      padding: clamp(23px, 4vw, 38px);
+      border: 1px solid rgba(60, 112, 84, .28);
+      border-top: 2px solid var(--lime);
+      background: rgba(250, 252, 246, .97);
+      box-shadow: 0 24px 70px rgba(43, 70, 53, .22);
+      animation: arrive .36s ease both;
+    }
+
+    @keyframes arrive { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+    .eyebrow { margin: 0 0 11px; color: var(--mint); }
+    .overlay-card h1 { max-width: 390px; margin: 0; font-size: clamp(33px, 6vw, 52px); line-height: .99; font-weight: 600; }
+    .overlay-copy { max-width: 390px; margin: 14px 0 19px; color: #405d53; font-size: 14px; line-height: 1.55; }
+    .overlay-facts { flex-wrap: wrap; gap: 7px; margin-bottom: 22px; }
+    .fact { padding: 6px 8px; border: 1px solid rgba(40, 76, 60, .2); color: #294a40; font: 10px var(--mono); }
+    .overlay-actions { flex-wrap: wrap; gap: 10px; }
+
+    .primary-button, .secondary-button {
+      min-height: 44px;
+      padding: 0 15px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: transform .18s ease, background .18s ease;
+    }
+
+    .primary-button { background: var(--lime); color: #172419; }
+    .primary-button:hover { background: #e7ffad; transform: translateY(-1px); }
+    .secondary-button { border-color: rgba(40, 76, 60, .3); background: transparent; color: var(--paper); }
+    .secondary-button:hover { background: rgba(18, 121, 110, .08); }
+
+    @media (min-height: 850px) { .game-frame { min-height: 600px; } }
+    @media (max-width: 680px) {
+      .shell { min-height: 100svh; padding: 12px 10px max(10px, env(safe-area-inset-bottom)); gap: 10px; }
+      .brand-tag, .run-label, .key-hint { display: none; }
+      .game-frame { min-height: 570px; }
+      .game-top { padding-top: 13px; }
+      .route-label { font-size: 9px; }
+      .route-stop { font-size: 8px; }
+      .lesson { top: 84px; padding: 10px 12px; }
+      .lesson h2 { font-size: 15px; }
+      .lesson p { font-size: 11px; }
+      .readouts { top: 89px; gap: 10px; }
+      .stat-label { font-size: 8px; }
+      .stat-value { font-size: 13px; }
+      .bottom-bar { min-height: 70px; padding: 9px 12px; }
+      .distance-readout { min-width: 89px; }
+      .distance { font-size: 15px; }
+      .signal-count { font-size: 9px; }
+      .control-button { width: 38px; height: 40px; }
+      .control-button.jump { width: 68px; }
+      .transfer-note { bottom: 82px; font-size: 9px; }
+    }
+
+    @media (max-width: 390px) {
+      .route-stop { font-size: 7px; }
+      .readouts { gap: 7px; }
+      .stat-value { font-size: 12px; }
+      .controls { gap: 5px; }
+      .control-button { width: 34px; }
+      .control-button.jump { width: 60px; }
+      .distance-readout { min-width: 104px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand" aria-label="Current Run">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <p class="brand-name">MONEY FLOW LAB</p>
+          <p class="brand-tag">PAYMENT SIMULATION / 01</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="run-label">LAB SIMULATION 01</span>
+        <button class="icon-button" id="pause-button" type="button" aria-label="Pause run" title="Pause run" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="game-frame" id="game-frame">
+      <canvas id="game-canvas" aria-label="Three-lane payment lab. Move the blue learner spark along the amber payment route."></canvas>
+
+      <div class="game-top" aria-label="Payment route progress">
+        <div class="route-label"><span>PAYMENT ROUTE</span><span id="route-counter">STOP 01 / 06</span></div>
+        <div class="route-stops" id="route-stops"></div>
+      </div>
+
+      <section class="lesson" aria-live="polite" aria-atomic="true">
+        <div class="lesson-heading"><span class="lesson-index" id="lesson-index">01</span><h2 id="lesson-title">Start on a phone</h2></div>
+        <p id="lesson-copy">A person chooses who to pay and how much to send.</p>
+      </section>
+
+      <div class="readouts" aria-label="Run score">
+        <div><span class="stat-label">SIGNALS</span><span class="stat-value"><b id="score">00</b></span></div>
+        <div><span class="stat-label">CHARGE</span><span class="stat-value"><b id="charge">● ● ●</b></span></div>
+      </div>
+
+      <p class="transfer-note"><strong>Blue:</strong> you <span aria-hidden="true">·</span> <strong>Amber:</strong> payment route</p>
+
+      <div class="bottom-bar">
+        <div class="distance-readout">
+          <div class="distance"><span id="distance">000</span><small> / 1,200 m</small></div>
+          <div class="signal-count"><span id="signal-count">0 sparks</span><span class="pace-readout"><span id="speed">32</span> m/s</span></div>
+        </div>
+        <div class="controls" aria-label="Game controls">
+          <button class="control-button" type="button" data-move="left" aria-label="Move left" title="Move left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 18-6-6 6-6"/></svg>
+          </button>
+          <button class="control-button" type="button" data-move="right" aria-label="Move right" title="Move right">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 18 6-6-6-6"/></svg>
+          </button>
+          <button class="control-button jump" type="button" data-move="jump" aria-label="Jump" title="Jump over a risk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg><span>JUMP</span>
+          </button>
+        </div>
+        <div class="key-hint"><span class="key">←</span><span class="key">→</span><span class="key jump-key">SPACE</span></div>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <section class="overlay-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title" aria-describedby="overlay-copy">
+          <p class="eyebrow" id="overlay-eyebrow">A LITTLE MONEY, A BIG JOURNEY</p>
+          <h1 id="overlay-title">Follow the light.</h1>
+          <p class="overlay-copy" id="overlay-copy">You're the blue learner spark. Follow the amber payment route from a phone through wallets, banks, and a payment network. The route teaches the handoffs; banks settle funds separately.</p>
+          <div class="overlay-facts" id="overlay-facts"><span class="fact">6 stops</span><span class="fact">3 wires</span><span class="fact">Watch for fake links</span></div>
+          <div class="overlay-actions">
+            <button class="primary-button" id="primary-action" type="button">START RUN <span aria-hidden="true">→</span></button>
+            <button class="secondary-button" id="secondary-action" type="button" hidden>RESTART</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const COURSE_LENGTH = 1200;
+      const START_SPEED = 40;
+      const TOP_SPEED = 60;
+      const ROUTE_STOPS = [
+        { short: "Phone", lane: -1, title: "Start on a phone", copy: "A person chooses who to pay and how much to send." },
+        { short: "Wallet", lane: 0, title: "Wallet checks details", copy: "A wallet or payment app securely sends the payment instruction." },
+        { short: "Your bank", lane: 1, title: "Your bank checks", copy: "The sender's bank checks permission, account details, and available funds." },
+        { short: "Network", lane: 0, title: "Payment network routes", copy: "A network passes the instruction between financial institutions; it does not hold everyone's money." },
+        { short: "Their bank", lane: -1, title: "Their bank receives it", copy: "The recipient's bank checks the request and updates the right account." },
+        { short: "Their phone", lane: 0, title: "It reaches their phone", copy: "The recipient sees the new balance. Banks may settle with each other separately." }
+      ];
+      const RISKS = ["FAKE LINK", "WRONG ACCT", "IMPERSONATOR", "CHECK DETAILS"];
+      const canvas = document.querySelector("#game-canvas");
+      const context = canvas.getContext("2d");
+      const frame = document.querySelector("#game-frame");
+      const overlay = document.querySelector("#overlay");
+      const pauseButton = document.querySelector("#pause-button");
+      const player = { lane: 0, drawLane: 0, jump: 0, jumpVelocity: 0 };
+      const items = [];
+      const routeElement = document.querySelector("#route-stops");
+      const routeCounter = document.querySelector("#route-counter");
+      const lessonIndex = document.querySelector("#lesson-index");
+      const lessonTitle = document.querySelector("#lesson-title");
+      const lessonCopy = document.querySelector("#lesson-copy");
+      const scoreElement = document.querySelector("#score");
+      const chargeElement = document.querySelector("#charge");
+      const distanceElement = document.querySelector("#distance");
+      const signalCount = document.querySelector("#signal-count");
+      const speedElement = document.querySelector("#speed");
+      const primaryAction = document.querySelector("#primary-action");
+      const secondaryAction = document.querySelector("#secondary-action");
+
+      let width = 0;
+      let height = 0;
+      let pixelRatio = 1;
+      let status = "intro";
+      let world = 0;
+      let score = 0;
+      let charge = 3;
+      let currentSpeed = START_SPEED;
+      let cameraShake = 0;
+      let hitFlash = 0;
+      let lastTime = 0;
+      let previousStop = -1;
+      const particles = [];
+
+      ROUTE_STOPS.forEach((stop, index) => {
+        const element = document.createElement("div");
+        element.className = "route-stop";
+        element.textContent = stop.short;
+        element.dataset.stop = index;
+        routeElement.append(element);
+      });
+
+      function resize() {
+        const bounds = frame.getBoundingClientRect();
+        pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        width = bounds.width;
+        height = bounds.height;
+        canvas.width = Math.round(width * pixelRatio);
+        canvas.height = Math.round(height * pixelRatio);
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        draw();
+      }
+
+      function reset() {
+        world = 0;
+        score = 0;
+        charge = 3;
+        currentSpeed = START_SPEED;
+        cameraShake = 0;
+        hitFlash = 0;
+        particles.length = 0;
+        previousStop = -1;
+        player.lane = 0;
+        player.drawLane = 0;
+        player.jump = 0;
+        player.jumpVelocity = 0;
+        items.length = 0;
+
+        let riskIndex = 0;
+        for (let position = 54; position < COURSE_LENGTH; position += 62) {
+          const riskLane = Math.floor(Math.random() * 3) - 1;
+          items.push({ type: "risk", position, lane: riskLane, label: RISKS[riskIndex++ % RISKS.length], passed: false });
+          const signalLane = (riskLane + 1 + Math.floor(Math.random() * 2)) % 3 - 1;
+          items.push({ type: "signal", position: position - 20, lane: signalLane, passed: false });
+        }
+        for (let position = 34; position < COURSE_LENGTH; position += 36) {
+          const lane = Math.floor(Math.random() * 3) - 1;
+          items.push({ type: "signal", position, lane, passed: false });
+        }
+        updateHud();
+      }
+
+      function updateHud() {
+        const currentStop = Math.min(ROUTE_STOPS.length - 1, Math.floor(world / (COURSE_LENGTH / ROUTE_STOPS.length)));
+        const stop = ROUTE_STOPS[currentStop];
+        routeCounter.textContent = `STOP ${String(currentStop + 1).padStart(2, "0")} / 06`;
+        lessonIndex.textContent = String(currentStop + 1).padStart(2, "0");
+        lessonTitle.textContent = stop.title;
+        lessonCopy.textContent = stop.copy;
+        scoreElement.textContent = String(score).padStart(2, "0");
+        chargeElement.textContent = `${"● ".repeat(charge)}${"○ ".repeat(3 - charge)}`.trim();
+        distanceElement.textContent = String(Math.floor(world)).padStart(3, "0");
+        signalCount.textContent = `${score} sparks`;
+        speedElement.textContent = String(Math.floor(currentSpeed));
+        document.querySelectorAll(".route-stop").forEach((element, index) => {
+          element.classList.toggle("active", index === currentStop);
+          element.classList.toggle("passed", index < currentStop);
+        });
+        if (currentStop !== previousStop) {
+          previousStop = currentStop;
+          routeElement.setAttribute("aria-label", `Stop ${currentStop + 1} of 6: ${stop.short}`);
+        }
+      }
+
+      function move(direction) {
+        if (status !== "running") return;
+        if (direction === "left") player.lane = Math.max(-1, player.lane - 1);
+        if (direction === "right") player.lane = Math.min(1, player.lane + 1);
+        if (direction === "jump" && player.jump === 0) player.jumpVelocity = 7.2;
+      }
+
+      function showOverlay(mode) {
+        status = mode;
+        overlay.hidden = false;
+        pauseButton.disabled = mode === "intro" || mode === "finished" || mode === "crashed";
+        const eyebrow = document.querySelector("#overlay-eyebrow");
+        const title = document.querySelector("#overlay-title");
+        const copy = document.querySelector("#overlay-copy");
+        const facts = document.querySelector("#overlay-facts");
+
+        if (mode === "intro") {
+          eyebrow.textContent = "A LITTLE MONEY, A BIG JOURNEY";
+          title.textContent = "Follow the light.";
+          copy.textContent = "You're the blue learner spark. Follow the amber payment route from a phone through wallets, banks, and a payment network. The route teaches the handoffs; banks settle funds separately.";
+          facts.innerHTML = '<span class="fact">6 stops</span><span class="fact">3 wires</span><span class="fact">Watch for fake links</span>';
+          primaryAction.textContent = "START RUN →";
+          secondaryAction.hidden = true;
+        } else if (mode === "paused") {
+          eyebrow.textContent = "CIRCUIT ON HOLD";
+          title.textContent = "Catch your breath.";
+          copy.textContent = "The payment is still on its way. Ready to keep chasing?";
+          facts.innerHTML = `<span class="fact">${Math.floor(world)} m traveled</span><span class="fact">${score} signal sparks</span>`;
+          primaryAction.textContent = "KEEP RUNNING →";
+          secondaryAction.hidden = false;
+        } else if (mode === "crashed") {
+          eyebrow.textContent = "SIGNAL INTERRUPTED";
+          title.textContent = "Check before you tap.";
+          copy.textContent = "A rushed payment or fake message can lead to trouble. Real banks never need your password from a link in a message.";
+          facts.innerHTML = `<span class="fact">${Math.floor(world)} m traveled</span><span class="fact">${score} signal sparks collected</span>`;
+          primaryAction.textContent = "TRY THE ROUTE AGAIN →";
+          secondaryAction.hidden = true;
+        } else if (mode === "finished") {
+          eyebrow.textContent = "ROUTE COMPLETE · 6 STOPS";
+          title.textContent = "You caught the current.";
+          copy.textContent = "Phone → wallet → sender's bank → payment network → receiver's bank → phone. The payment instruction travels; banks settle funds between them behind the scenes.";
+          facts.innerHTML = `<span class="fact">${score} signal sparks</span><span class="fact">Always check the recipient</span>`;
+          primaryAction.textContent = "RUN IT AGAIN →";
+          secondaryAction.hidden = true;
+        }
+        requestAnimationFrame(() => primaryAction.focus());
+      }
+
+      function startRun() {
+        if (status === "paused") {
+          status = "running";
+          overlay.hidden = true;
+          pauseButton.disabled = false;
+          lastTime = performance.now();
+          return;
+        }
+        reset();
+        status = "running";
+        overlay.hidden = true;
+        pauseButton.disabled = false;
+        lastTime = performance.now();
+      }
+
+      function update(delta) {
+        if (status !== "running") return;
+        currentSpeed = START_SPEED + (TOP_SPEED - START_SPEED) * Math.min(1, world / COURSE_LENGTH);
+        world += delta * currentSpeed;
+        cameraShake = Math.max(0, cameraShake - delta * 2.8);
+        hitFlash = Math.max(0, hitFlash - delta * 1.5);
+        player.drawLane += (player.lane - player.drawLane) * Math.min(1, delta * 15);
+        if (player.jumpVelocity !== 0 || player.jump > 0) {
+          player.jump += player.jumpVelocity * delta;
+          player.jumpVelocity -= 18 * delta;
+          if (player.jump <= 0) {
+            player.jump = 0;
+            player.jumpVelocity = 0;
+          }
+        }
+        for (const particle of particles) {
+          particle.x += particle.vx * delta;
+          particle.y += particle.vy * delta;
+          particle.vy += 115 * delta;
+          particle.life -= delta;
+        }
+        for (let index = particles.length - 1; index >= 0; index -= 1) {
+          if (particles[index].life <= 0) particles.splice(index, 1);
+        }
+
+        for (const item of items) {
+          if (item.passed || Math.abs(item.position - world) > 2.5) continue;
+          if (item.lane !== player.lane) {
+            item.passed = true;
+            continue;
+          }
+          if (item.type === "signal") {
+            item.passed = true;
+            score += 1;
+            burst(laneX(item.lane, .92), height * .8, "#d9ff78", 9);
+          } else if (player.jump > .48) {
+            item.passed = true;
+            score += 2;
+          } else {
+            item.passed = true;
+            charge -= 1;
+            cameraShake = .9;
+            hitFlash = .42;
+            burst(laneX(player.lane, .92), height * .8, "#ff886b", 22);
+            if (charge <= 0) {
+              updateHud();
+              showOverlay("crashed");
+              return;
+            }
+          }
+        }
+
+        updateHud();
+        if (world >= COURSE_LENGTH) showOverlay("finished");
+      }
+
+      function burst(x, y, color, count) {
+        for (let index = 0; index < count; index += 1) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 35 + Math.random() * 190;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: .3 + Math.random() * .38,
+            maxLife: .68,
+            size: 1.5 + Math.random() * 3.5,
+            color
+          });
+        }
+      }
+
+      function laneX(lane, depth) {
+        const spread = width * (.105 + depth * .19);
+        return width / 2 + lane * spread;
+      }
+
+      function routeLaneAt(distance) {
+        const segmentLength = COURSE_LENGTH / ROUTE_STOPS.length;
+        const boundedDistance = Math.max(0, Math.min(COURSE_LENGTH, distance));
+        const stopIndex = Math.min(ROUTE_STOPS.length - 1, Math.floor(boundedDistance / segmentLength));
+        const nextIndex = Math.min(ROUTE_STOPS.length - 1, stopIndex + 1);
+        if (stopIndex === nextIndex) return ROUTE_STOPS[stopIndex].lane;
+        const progress = (boundedDistance - stopIndex * segmentLength) / segmentLength;
+        const eased = progress * progress * (3 - 2 * progress);
+        const startLane = ROUTE_STOPS[stopIndex].lane;
+        return startLane + (ROUTE_STOPS[nextIndex].lane - startLane) * eased;
+      }
+
+      function depthY(depth) {
+        const horizon = height * .28;
+        const floor = height * .88;
+        return horizon + Math.pow(depth, 1.72) * (floor - horizon);
+      }
+
+      function drawBackground(time) {
+        const sky = context.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, "#d8e8df");
+        sky.addColorStop(.52, "#f0efd9");
+        sky.addColorStop(1, "#c5d9cd");
+        context.fillStyle = sky;
+        context.fillRect(0, 0, width, height);
+
+        const glow = context.createRadialGradient(width / 2, height * .63, 2, width / 2, height * .63, width * .48);
+        glow.addColorStop(0, "rgba(237, 151, 62, .16)");
+        glow.addColorStop(1, "rgba(237, 151, 62, 0)");
+        context.fillStyle = glow;
+        context.fillRect(0, 0, width, height);
+
+        const horizon = height * .28;
+        const floor = height * .89;
+        for (let index = 0; index < 26; index += 1) {
+          const seed = (index * 83.7) % 997;
+          const x = (seed / 997) * width;
+          const y = horizon + ((seed * .47) % (floor - horizon));
+          const pulse = .25 + (Math.sin(time / 430 + seed) + 1) * .22;
+          context.fillStyle = `rgba(45, 105, 83, ${pulse})`;
+          context.beginPath();
+          context.arc(x, y, index % 4 === 0 ? 1.5 : 1, 0, Math.PI * 2);
+          context.fill();
+        }
+      }
+
+      function drawSpeedStreaks(time) {
+        const horizon = height * .28;
+        for (let index = 0; index < 34; index += 1) {
+          const seed = (index * .6180339887) % 1;
+          const depth = (seed + world * .034) % 1;
+          const x = ((index * 137.5) % 997) / 997 * width;
+          const y = horizon + Math.pow(depth, 1.45) * (height * .78 - horizon);
+          const length = 5 + depth * (38 + (currentSpeed - START_SPEED) * 2.1);
+          const drift = (width / 2 - x) * depth * .025;
+          const flicker = .72 + Math.sin(time / 90 + index) * .2;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x + drift, y + length);
+          context.lineWidth = .7 + depth * 1.2;
+          context.strokeStyle = index % 6 === 0
+            ? `rgba(255, 136, 107, ${(0.08 + depth * .28) * flicker})`
+            : `rgba(31, 112, 91, ${(0.07 + depth * .25) * flicker})`;
+          context.stroke();
+        }
+      }
+
+      function drawWires(time) {
+        const horizon = height * .28;
+        const floor = height * .91;
+        const topSpread = width * .105;
+        const bottomSpread = width * .31;
+        const leftTop = width / 2 - topSpread * 1.8;
+        const rightTop = width / 2 + topSpread * 1.8;
+        const leftBottom = width / 2 - bottomSpread * 1.25;
+        const rightBottom = width / 2 + bottomSpread * 1.25;
+
+        context.beginPath();
+        context.moveTo(leftTop, horizon);
+        context.lineTo(rightTop, horizon);
+        context.lineTo(rightBottom, floor);
+        context.lineTo(leftBottom, floor);
+        context.closePath();
+          context.fillStyle = "rgba(35, 76, 59, .12)";
+        context.fill();
+
+        for (let lane = -1; lane <= 1; lane += 1) {
+          const topX = width / 2 + lane * topSpread;
+          const bottomX = width / 2 + lane * bottomSpread;
+          context.beginPath();
+          context.moveTo(topX, horizon);
+          context.lineTo(bottomX, floor);
+          context.lineWidth = lane === 0 ? 2 : 1.2;
+          const pulse = .36 + Math.sin(time / 150 + lane) * .08;
+          context.strokeStyle = lane === 0 ? `rgba(27, 121, 100, ${pulse})` : "rgba(63, 114, 94, .44)";
+          context.shadowColor = lane === 0 ? "rgba(18, 121, 110, .42)" : "transparent";
+          context.shadowBlur = lane === 0 ? 9 : 0;
+          context.stroke();
+        }
+        context.shadowBlur = 0;
+
+        for (let index = 0; index < 15; index += 1) {
+          const depth = ((index / 15 + (world * .024) % 1) % 1);
+          const y = depthY(depth);
+          const span = width * (.06 + depth * .25);
+          context.beginPath();
+          context.moveTo(width / 2 - span, y);
+          context.lineTo(width / 2 + span, y);
+          context.lineWidth = 1;
+          context.strokeStyle = `rgba(174, 216, 172, ${.04 + depth * .11})`;
+          context.stroke();
+        }
+
+        for (let lane = -1; lane <= 1; lane += 1) {
+          for (let index = 0; index < 3; index += 1) {
+            const depth = ((index / 3 + world * .035 + lane * .11) % 1 + 1) % 1;
+            const x = laneX(lane, depth);
+            const y = depthY(depth);
+            context.beginPath();
+            context.arc(x, y, 1.4 + depth * 2.2, 0, Math.PI * 2);
+            context.fillStyle = lane === 0 ? "#e39a37" : "#348c75";
+            context.shadowColor = context.fillStyle;
+            context.shadowBlur = 8;
+            context.fill();
+          }
+        }
+        context.shadowBlur = 0;
+      }
+
+      function drawPaymentPath(time) {
+        const lookAhead = 125;
+        context.save();
+        context.beginPath();
+        for (let index = 0; index <= 48; index += 1) {
+          const depth = index / 48;
+          const routeDistance = world + lookAhead * (1 - depth);
+          const x = laneX(routeLaneAt(routeDistance), depth);
+          const y = depthY(depth);
+          if (index === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        }
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        context.strokeStyle = "rgba(226, 132, 47, .54)";
+        context.lineWidth = 9;
+        context.shadowColor = "rgba(226, 132, 47, .7)";
+        context.shadowBlur = 13;
+        context.stroke();
+        context.strokeStyle = "#e58a31";
+        context.lineWidth = 3;
+        context.shadowBlur = 0;
+        context.stroke();
+
+        for (let index = 0; index < 5; index += 1) {
+          const depth = ((index / 5 + world * .027) % 1 + 1) % 1;
+          const x = laneX(routeLaneAt(world + lookAhead * (1 - depth)), depth);
+          const y = depthY(depth);
+          context.beginPath();
+          context.arc(x, y, 2 + depth * 2, 0, Math.PI * 2);
+          context.fillStyle = "#fff4d3";
+          context.shadowColor = "#e58a31";
+          context.shadowBlur = 8;
+          context.fill();
+        }
+        context.restore();
+      }
+
+      function drawSignal(x, y, size, time) {
+        const pulse = 1 + Math.sin(time / 150 + x) * .1;
+        context.save();
+        context.translate(x, y);
+        context.rotate(Math.PI / 4);
+        context.scale(pulse, pulse);
+        context.shadowColor = "#d9ff78";
+        context.shadowBlur = size * 1.1;
+        context.fillStyle = "#e7ff9b";
+        context.fillRect(-size / 2, -size / 2, size, size);
+        context.shadowBlur = 0;
+        context.strokeStyle = "rgba(255, 255, 255, .8)";
+        context.lineWidth = 1;
+        context.strokeRect(-size / 2, -size / 2, size, size);
+        context.restore();
+      }
+
+      function drawRisk(x, y, size, label) {
+        context.save();
+        context.translate(x, y);
+        context.shadowColor = "rgba(255, 136, 107, .55)";
+        context.shadowBlur = size * .55;
+        context.fillStyle = "rgba(49, 29, 25, .94)";
+        context.strokeStyle = "#ff886b";
+        context.lineWidth = Math.max(1, size * .055);
+        context.beginPath();
+        context.moveTo(-size * .53, 0);
+        context.lineTo(-size * .38, -size * .76);
+        context.lineTo(size * .38, -size * .76);
+        context.lineTo(size * .53, 0);
+        context.lineTo(size * .38, size * .15);
+        context.lineTo(-size * .38, size * .15);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.shadowBlur = 0;
+        context.fillStyle = "#ffc0a9";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.font = `500 ${Math.max(5, size * .13)}px "DM Mono", monospace`;
+        context.fillText(label, 0, -size * .3, size * .82);
+        context.restore();
+      }
+
+      function drawOrb(x, y, radius, color, glowColor, time, isPlayer) {
+        const pulse = 1 + Math.sin(time / 190 + (isPlayer ? 0 : 1.4)) * .055;
+        context.save();
+        context.translate(x, y);
+        context.scale(pulse, pulse);
+        context.shadowColor = glowColor;
+        context.shadowBlur = radius * 2.2;
+        const gradient = context.createRadialGradient(-radius * .35, -radius * .4, 1, 0, 0, radius);
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(.24, color);
+        gradient.addColorStop(1, glowColor);
+        context.fillStyle = gradient;
+        context.beginPath();
+        context.arc(0, 0, radius, 0, Math.PI * 2);
+        context.fill();
+        context.shadowBlur = 0;
+        context.strokeStyle = "rgba(255, 255, 255, .74)";
+        context.lineWidth = Math.max(1, radius * .08);
+        context.stroke();
+        context.restore();
+      }
+
+      function drawParticles() {
+        for (const particle of particles) {
+          context.globalAlpha = Math.max(0, particle.life / particle.maxLife);
+          context.fillStyle = particle.color;
+          context.shadowColor = particle.color;
+          context.shadowBlur = particle.size * 3;
+          context.beginPath();
+          context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.globalAlpha = 1;
+        context.shadowBlur = 0;
+      }
+
+      function draw(time = 0) {
+        if (!width || !height) return;
+        context.save();
+        if (cameraShake > 0) {
+          context.translate((Math.random() - .5) * cameraShake * 13, (Math.random() - .5) * cameraShake * 10);
+        }
+        drawBackground(time);
+        drawSpeedStreaks(time);
+        drawWires(time);
+        drawPaymentPath(time);
+
+        const visible = items
+          .filter(item => !item.passed && item.position >= world && item.position - world < 115)
+          .sort((first, second) => second.position - first.position);
+
+        for (const item of visible) {
+          const distance = item.position - world;
+          const depth = Math.max(0, 1 - distance / 115);
+          const x = laneX(item.lane, depth);
+          const y = depthY(depth);
+          const scale = .25 + depth * .86;
+          if (item.type === "signal") drawSignal(x, y, 9 + 15 * scale, time);
+          else drawRisk(x, y, 24 + 55 * scale, item.label);
+        }
+
+        const targetDepth = .65;
+        const targetDistance = Math.min(COURSE_LENGTH, world + 125 * (1 - targetDepth));
+        const receiverX = laneX(routeLaneAt(targetDistance), targetDepth);
+        const receiverY = depthY(targetDepth);
+        const playerX = laneX(player.drawLane, .92);
+        const playerY = height * .805 - player.jump * height * .055;
+        drawParticles();
+        drawOrb(receiverX, receiverY + Math.sin(time / 380) * 3, Math.max(10, Math.min(21, width * .02)), "#ffd27a", "#e58a31", time, false);
+        drawOrb(playerX, playerY, Math.max(13, Math.min(26, width * .025)), "#71d9f4", "#1684a4", time, true);
+        if (hitFlash > 0) {
+          context.fillStyle = `rgba(255, 91, 76, ${hitFlash * .14})`;
+          context.fillRect(0, 0, width, height);
+        }
+        context.restore();
+      }
+
+      function tick(time) {
+        if (status === "running") {
+          const delta = Math.min(.05, (time - lastTime) / 1000 || 0);
+          lastTime = time;
+          update(delta);
+        }
+        draw(time);
+        requestAnimationFrame(tick);
+      }
+
+      function togglePause() {
+        if (status === "running") showOverlay("paused");
+        else if (status === "paused") startRun();
+      }
+
+      primaryAction.addEventListener("click", startRun);
+      secondaryAction.addEventListener("click", () => {
+        reset();
+        showOverlay("intro");
+      });
+      pauseButton.addEventListener("click", togglePause);
+      document.querySelectorAll("[data-move]").forEach(button => {
+        button.addEventListener("pointerdown", event => {
+          event.preventDefault();
+          move(button.dataset.move);
+        });
+      });
+
+      window.addEventListener("keydown", event => {
+        const key = event.key.toLowerCase();
+        if (["arrowleft", "arrowright", "arrowup", " "].includes(key)) event.preventDefault();
+        if (key === "arrowleft" || key === "a") move("left");
+        if (key === "arrowright" || key === "d") move("right");
+        if (key === "arrowup" || key === "w" || key === " ") move("jump");
+        if (key === "escape" || key === "p") togglePause();
+      });
+
+      let touchStart = null;
+      canvas.addEventListener("pointerdown", event => {
+        if (event.pointerType !== "mouse") touchStart = { x: event.clientX, y: event.clientY };
+      });
+      canvas.addEventListener("pointerup", event => {
+        if (!touchStart) return;
+        const dx = event.clientX - touchStart.x;
+        const dy = event.clientY - touchStart.y;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) > 28) {
+          if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? "right" : "left");
+          else if (dy < 0) move("jump");
+        }
+        touchStart = null;
+      });
+      canvas.addEventListener("pointercancel", () => { touchStart = null; });
+      window.addEventListener("resize", resize);
+      window.addEventListener("blur", () => { if (status === "running") showOverlay("paused"); });
+
+      reset();
+      resize();
+      requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>
