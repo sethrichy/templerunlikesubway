@@ -371,7 +371,7 @@
 
       <div class="bottom-bar">
         <div class="distance-readout">
-          <div class="distance"><span id="distance">000</span><small> / 1,200 m</small></div>
+          <div class="distance"><span id="distance">000</span><small> / 2,400 m</small></div>
           <div class="signal-count"><span id="signal-count">0 sparks</span><span class="pace-readout"><span id="speed">32</span> m/s</span></div>
         </div>
         <div class="controls" aria-label="Game controls">
@@ -405,7 +405,7 @@
 
   <script>
     (() => {
-      const COURSE_LENGTH = 1200;
+      const COURSE_LENGTH = 2400;
       const START_SPEED = 40;
       const TOP_SPEED = 60;
       const ROUTE_STOPS = [
@@ -486,11 +486,12 @@
         items.length = 0;
 
         let riskIndex = 0;
-        for (let position = 54; position < COURSE_LENGTH; position += 62) {
+        for (let position = 54; position < COURSE_LENGTH;) {
           const riskLane = Math.floor(Math.random() * 3) - 1;
           items.push({ type: "risk", position, lane: riskLane, label: RISKS[riskIndex++ % RISKS.length], passed: false });
           const signalLane = (riskLane + 1 + Math.floor(Math.random() * 2)) % 3 - 1;
           items.push({ type: "signal", position: position - 20, lane: signalLane, passed: false });
+          position += 62 - (position / COURSE_LENGTH) * 14;
         }
         for (let position = 34; position < COURSE_LENGTH; position += 36) {
           const lane = Math.floor(Math.random() * 3) - 1;
